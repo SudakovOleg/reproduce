@@ -19,6 +19,7 @@ from trains.train_factory import train_factory
 
 
 def main(opt):
+    print()
     torch.manual_seed(opt.seed)
     torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
 
@@ -36,8 +37,10 @@ def main(opt):
 
     logger = Logger(opt)
 
+    
     os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
-    opt.device = torch.device('cuda' if opt.gpus[0] >= 0 else 'cpu')
+    opt.device = torch.device('cuda')
+    print(opt.device)
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
@@ -48,7 +51,7 @@ def main(opt):
 
     train_loader = torch.utils.data.DataLoader(
         dataset,
-        batch_size=opt.batch_size,
+        batch_size=32,
         shuffle=True,
         num_workers=opt.num_workers,
         pin_memory=True,
@@ -58,7 +61,7 @@ def main(opt):
     print('Starting training...')
     Trainer = train_factory[opt.task]
     trainer = Trainer(opt, model, optimizer)
-    trainer.set_device(opt.gpus, opt.chunk_sizes, opt.device)
+    trainer.set_device([opt.gpus[0]], opt.chunk_sizes, opt.device)
 
     if opt.load_model != '':
         model, optimizer, start_epoch = load_model(
